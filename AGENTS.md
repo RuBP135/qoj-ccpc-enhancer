@@ -4,6 +4,7 @@
 
 ## 需求
 
+- 分析 qoj 得出的一些已知信息已经写入 [qoj-data.md](docs/qoj-data.md)
 - 实现前阅读 [spec.md](docs/spec.md)，按照文档中的规则实现；
 - 检查代码时，也要核对实际行为是否与文档一致。
 
