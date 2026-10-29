@@ -3,8 +3,8 @@
 以下规则仅为推断和猜测，且主要对 ICPC 模式（`icpc_partial_scores === false`）下的榜单进行分析，并不代表 qoj 实际逻辑就是如此
 
 
-- `standings` 包含当前榜单模式下的全部队伍，并不按分页来，队伍标识为 `row[2][0]`。
-- `problems` 为题目 ID，`problems_id` 为显示题号；`score[队伍标识][题目下标]` 是每题汇总，不是完整提交历史。缺少该项表示没有提交。
+- `standings` 包含当前榜单模式下的全部队伍，并不按分页来，队伍标识为 `row[2][0]`
+- `problems` 为题目 ID，`problems_id` 为显示题号；`score[队伍标识][题目下标]` 是对每题汇总。一个题没有该项即为没有提交
 
 | 下标  | 含义                                                                                |
 |-------|-------------------------------------------------------------------------------------|
@@ -16,10 +16,10 @@
 | `[5]` | 为 `1` 时显示结果未知的 `?N`，表示封榜后不可见的提交情况                            |
 | `[6]` | `showStandings()` 未读取，暂未确认，似乎也不太需要                                  |
 
-- `uoj.js`中的`showStandings()`：统计通过数，生成表头和队伍行，这是主要改动点。
+- `uoj.js`中的`showStandings()`：统计通过数，生成表头和队伍行，这是主要改动点
 - 比赛时和比赛结束后的 `uoj.js` 是相同的
-- `$.fn.long_table()`：前端分页；翻页会重新生成表格，改造需覆盖这一过程。
-- 可复用 `getPenaltyTimeStr()`（秒转小时、分钟）、`getColOfScore()`、`getUserLink()`、`uojLocale()`；奖牌列使用 `getMedalType()`、`getMedalHTML()`。
-- 比赛中页面启用倒计时和通知检查；`countdown()` 只更新倒计时，`checkContestNotice()` 每两分钟检查通知，均不刷新榜单。通知时间参数不是开赛时间。
-- 比赛中 HTML 提供进度条、结束倒计时和封榜时间配置；两份样本的 `finalized` 都为 `0`，不能将其作为比赛阶段或封榜标志。现有比赛中样本尚未进入封榜期。
+- `$.fn.long_table()`：前端分页；翻页会重新生成表格，改造需覆盖这一过程
+- 可复用 `getPenaltyTimeStr()`（秒转小时、分钟）、`getColOfScore()`、`getUserLink()`、`uojLocale()`；奖牌列使用 `getMedalType()`、`getMedalHTML()`
+- 比赛中页面启用倒计时和通知检查；`countdown()` 只更新倒计时，`checkContestNotice()` 每两分钟检查通知，均不刷新榜单。通知时间参数不是开赛时间
+- 比赛中 HTML 提供进度条、结束倒计时和封榜时间配置
 - 提交 id 的数字越大，可以认为提交时间越靠后
