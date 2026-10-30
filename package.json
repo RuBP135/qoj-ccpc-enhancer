@@ -5,5 +5,8 @@
   "type": "module",
   "devDependencies": {
     "esbuild": "0.28.2"
+  },
+  "scripts": {
+    "build": "node scripts/build.js"
   }
 }

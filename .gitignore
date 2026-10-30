@@ -2,3 +2,4 @@
 local/
 .codex/config.toml
 node_modules/
+dist/
