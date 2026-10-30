@@ -1,3 +1,4 @@
 .idea/
-/local/
-/.codex/config.toml
+local/
+.codex/config.toml
+node_modules/
