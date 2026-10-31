@@ -9,7 +9,7 @@ export function isProblemSolved(problemScore) {
     return score === maxScore || score === 97;
 }
 
-export function getProblemStates(standingsData, { need = null, isFrozen = false } = {}) {
+export function getProblemStates(standingsData, { need = null } = {}) {
     if (need !== null && (!Number.isSafeInteger(need) || need <= 0)) {
         throw new RangeError("need 必须为正整数或 null");
     }
@@ -29,7 +29,6 @@ export function getProblemStates(standingsData, { need = null, isFrozen = false 
             label: problemLabels[index] ?? "N/A",
             passedCount,
             revealed:
-                isFrozen ||
                 (need !== null && passedCount >= need) ||
                 passedCount >= ratioThreshold,
         };
