@@ -26,7 +26,7 @@ export function getProblemStates(standingsData, { need = null, isFrozen = false 
         return {
             index,
             id,
-            label: problemLabels[index] ?? String.fromCharCode("A".charCodeAt(0) + index),
+            label: problemLabels[index] ?? "N/A",
             passedCount,
             revealed:
                 isFrozen ||
@@ -43,7 +43,7 @@ export function sortHeaderProblems(problemStates) {
         }
 
         if (!left.revealed && left.passedCount !== right.passedCount) {
-            return left.passedCount - right.passedCount;
+            return right.passedCount - left.passedCount;
         }
 
         // index 对应 QOJ 原榜的题号顺序。
