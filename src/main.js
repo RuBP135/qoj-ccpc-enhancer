@@ -1,5 +1,6 @@
 import { getContestPageContext, isSupportedStandingsPage } from "./qoj/page.js";
 import { getStandingsData } from "./qoj/standings.js";
+import { getContestPhase } from "./qoj/phase.js";
 import { loadContestSettings, saveContestSettings } from "./settings.js";
 import { mountSettingsButton } from "./ui/settings-button.js";
 import { createSettingsDialog } from "./ui/settings-dialog.js";
@@ -24,14 +25,20 @@ if (contestPage !== null) {
     }
 
     if (isSupportedStandingsPage(contestPage)) {
-        const standingsData = getStandingsData();
+        const phase = getContestPhase();
 
-        if (standingsData === null) {
-            console.warn("[QOJ CCPC Enhancer] 榜单数据缺失或格式不正确");
-        } else {
-            console.info(
-                `[QOJ CCPC Enhancer] 已读取 ${standingsData.standings.length} 支队伍、${standingsData.problems.length} 道题`,
-            );
+        if (phase === null) {
+            console.warn("[QOJ CCPC Enhancer] 无法识别比赛阶段，保留原榜");
+        } else if (phase === "running") {
+            const standingsData = getStandingsData();
+
+            if (standingsData === null) {
+                console.warn("[QOJ CCPC Enhancer] 榜单数据缺失或格式不正确");
+            } else {
+                console.info(
+                    `[QOJ CCPC Enhancer] 已读取 ${standingsData.standings.length} 支队伍、${standingsData.problems.length} 道题，阶段：${phase}`,
+                );
+            }
         }
     }
 }
