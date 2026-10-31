@@ -12,5 +12,12 @@ export function getStandingsData() {
         return null;
     }
 
-    return { standings, score, problems, problemLabels };
+    return {
+        standings, score, problems, problemLabels,
+        myName: window.my_name,
+        external: Boolean(window.external),
+        finalized: Boolean(window.finalized),
+        showMedals: Boolean(window.show_medals),
+        version: window.standings_version,
+    };
 }
