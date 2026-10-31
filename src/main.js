@@ -1,38 +1,28 @@
-import { getContestPageContext } from "./qoj/page.js";
+import { getContestPageContext, isSupportedStandingsPage } from "./data/page.js";
 import { loadContestSettings, saveContestSettings } from "./settings.js";
-import { mountModeCheckbox } from "./ui/mode-checkbox.js";
+import { createStandingsController } from "./standings-controller.js";
+import { mountSettingsButton } from "./ui/settings-button.js";
+import { createSettingsDialog } from "./ui/settings-dialog.js";
 
 const contestPage = getContestPageContext();
 
 if (contestPage !== null) {
-    const modeCheckbox = mountModeCheckbox();
+    const settings = loadContestSettings(contestPage.id);
+    const standingsController = isSupportedStandingsPage(contestPage)
+        ? createStandingsController(contestPage, settings)
+        : null;
+    const settingsButton = mountSettingsButton();
 
-    if (modeCheckbox !== null) {
-        let settings = loadContestSettings(contestPage.id);
-        modeCheckbox.checked = settings.enabled;
-
-        modeCheckbox.addEventListener("change", () => {
-            const updatedSettings = { enabled: modeCheckbox.checked };
-
-            if (settings.enabled !== updatedSettings.enabled) {
-                const message = updatedSettings.enabled
-                    ? "确认为当前比赛启用 CCPC 新赛制的榜单显示？"
-                    : "取消后会立即切换回到原来的榜单，可能导致看到更详细的过题情况，确定吗";
-                const confirmed = window.confirm(message);
-
-                if (!confirmed) {
-                    modeCheckbox.checked = settings.enabled;
-                    return;
-                }
-            }
-
-            try {
+    if (settingsButton !== null) {
+        const settingsDialog = createSettingsDialog({
+            onSave(updatedSettings) {
                 saveContestSettings(contestPage.id, updatedSettings);
-                settings = updatedSettings;
-            } catch (error) {
-                modeCheckbox.checked = settings.enabled;
-                console.error("[QOJ CCPC Enhancer] 保存比赛设置失败", error);
-            }
+                standingsController?.updateSettings(updatedSettings);
+            },
+        });
+
+        settingsButton.addEventListener("click", () => {
+            settingsDialog.open(loadContestSettings(contestPage.id));
         });
 
         console.info(`[QOJ CCPC Enhancer] 已初始化比赛 ${contestPage.id}`);
