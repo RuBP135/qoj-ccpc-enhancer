@@ -1,6 +1,6 @@
-import { getContestPageContext, isSupportedStandingsPage } from "./qoj/page.js";
-import { getStandingsData } from "./qoj/standings.js";
-import { getContestPhase } from "./qoj/phase.js";
+import { getContestPageContext, isSupportedStandingsPage } from "./data/page.js";
+import { getStandingsData } from "./data/standings.js";
+import { getContestPhase } from "./data/phase.js";
 import { loadContestSettings, saveContestSettings } from "./settings.js";
 import { mountSettingsButton } from "./ui/settings-button.js";
 import { createSettingsDialog } from "./ui/settings-dialog.js";
