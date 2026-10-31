@@ -1,3 +1,10 @@
+export function isProblemSolved(problemScore) {
+    return (
+        problemScore !== undefined &&
+        (problemScore[0] === problemScore[4] || problemScore[0] === 97)
+    );
+}
+
 export function getProblemStates(standingsData, { need = null, isFrozen = false } = {}) {
     if (need !== null && (!Number.isInteger(need) || need <= 0)) {
         throw new RangeError("need 必须为正整数或 null");
@@ -9,11 +16,7 @@ export function getProblemStates(standingsData, { need = null, isFrozen = false 
     return problems.map((id, index) => {
         const passedCount = standings.reduce((count, row) => {
             const problemScore = score[row[2][0]]?.[index];
-            const solved =
-                problemScore !== undefined &&
-                (problemScore[0] === problemScore[4] || problemScore[0] === 97);
-
-            return count + (solved ? 1 : 0);
+            return count + (isProblemSolved(problemScore) ? 1 : 0);
         }, 0);
 
         return {
