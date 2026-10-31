@@ -14,6 +14,18 @@ if (contestPage !== null) {
         modeCheckbox.addEventListener("change", () => {
             const updatedSettings = { enabled: modeCheckbox.checked };
 
+            if (settings.enabled !== updatedSettings.enabled) {
+                const message = updatedSettings.enabled
+                    ? "确认为当前比赛启用 CCPC 新赛制的榜单显示？"
+                    : "取消后会立即切换回到原来的榜单，可能导致看到更详细的过题情况，确定吗";
+                const confirmed = window.confirm(message);
+
+                if (!confirmed) {
+                    modeCheckbox.checked = settings.enabled;
+                    return;
+                }
+            }
+
             try {
                 saveContestSettings(contestPage.id, updatedSettings);
                 settings = updatedSettings;
