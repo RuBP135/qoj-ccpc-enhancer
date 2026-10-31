@@ -1,4 +1,10 @@
-import { getProblemStates, isProblemSolved, sortHeaderProblems } from "../domain/problems.js";
+import {
+    getProblemStates,
+    isProblemSolved,
+    isValidAcTime,
+    isValidSubmissionId,
+    sortHeaderProblems,
+} from "../domain/problems.js";
 import { sortTeamProblems } from "../domain/teams.js";
 
 function escapeHtml(value) {
@@ -69,14 +75,26 @@ function renderTeamName(team) {
     return escapeHtml(nickname);
 }
 
-function renderProblemCell(problem, record, context) {
-    if (record === undefined || record === null ||
-        !Number.isSafeInteger(record[3]) || record[3] < 0) {
+function renderProblemCell(problem, record, context, isImported) {
+    if (record === undefined || record === null) {
         return "<td></td>";
     }
 
-    const statistic = context.statistics[problem.index];
+    if (!Number.isSafeInteger(record[3]) || record[3] < 0) {
+        return "<td>N/A</td>";
+    }
+
     const solved = isProblemSolved(record);
+
+    if (solved && !isValidAcTime(record[1])) {
+        return "<td>N/A</td>";
+    }
+
+    if (!solved && !isImported && !isValidSubmissionId(record[2])) {
+        return "<td>N/A</td>";
+    }
+
+    const statistic = context.statistics[problem.index];
     const hacked = solved && record[0] === 97;
     const firstAccepted = solved && !hacked && record[1] === statistic.firstAcceptedAt;
     const cellClass = hacked ? ' class="table-danger"' : firstAccepted ? ' class="table-success"' : "";
@@ -96,7 +114,7 @@ function renderProblemCell(problem, record, context) {
         color = window.getColOfScore(0, 1);
     }
 
-    const linkAllowed = problem.revealed && Number.isSafeInteger(record[2]) && record[2] > 0;
+    const linkAllowed = problem.revealed && isValidSubmissionId(record[2]);
     const tag = linkAllowed ? "a" : "span";
     const href = linkAllowed ? ` href="/submission/${record[2]}"` : "";
     const assigned = solved ? ' data-assigned="1"' : "";
@@ -111,7 +129,8 @@ function renderProblemCell(problem, record, context) {
 function renderTeamRow(row, problemStates, context) {
     const team = row[2];
     const scores = context.score[team[0]] ?? {};
-    const orderedProblems = sortTeamProblems(problemStates, scores, { isImported: team[2] === 3 });
+    const isImported = team[2] === 3;
+    const orderedProblems = sortTeamProblems(problemStates, scores, { isImported });
     const acceptedCount = problemStates.filter((problem) => isProblemSolved(scores[problem.index])).length;
     const rowClass = context.myName === team[0]
         ? ' class="table-warning"'
@@ -122,7 +141,7 @@ function renderTeamRow(row, problemStates, context) {
     const color = window.getColOfScore(acceptedCount / Math.max(problemStates.length, 1), 1);
     const total = `<td><div><span class="uoj-score" data-max="${problemStates.length}" style="color:${escapeHtml(color)}">${acceptedCount}</span></div><div>${escapeHtml(window.getPenaltyTimeStr(row[1]))}</div></td>`;
     const cells = orderedProblems.map((problem) =>
-        renderProblemCell(problem, scores[problem.index], context),
+        renderProblemCell(problem, scores[problem.index], context, isImported),
     ).join("");
 
     return `<tr${rowClass}><td>${escapeHtml(row[3])}</td><td>${renderTeamName(team)}</td>${medal}${total}${cells}</tr>`;

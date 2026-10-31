@@ -1,4 +1,19 @@
-import { isProblemSolved } from "./problems.js";
+import { isProblemSolved, isValidAcTime, isValidSubmissionId } from "./problems.js";
+
+function compareSortValues(left, right, isValid, problemOrder) {
+    const leftValid = isValid(left);
+    const rightValid = isValid(right);
+
+    if (leftValid !== rightValid) {
+        return leftValid ? -1 : 1;
+    }
+
+    if (!leftValid) {
+        return problemOrder;
+    }
+
+    return left - right || problemOrder;
+}
 
 export function sortTeamProblems(problemStates, teamScores = {}, { isImported = false } = {}) {
     return [...problemStates].sort((left, right) => {
@@ -22,7 +37,7 @@ export function sortTeamProblems(problemStates, teamScores = {}, { isImported = 
         }
 
         if (leftSolved) {
-            return leftScore[1] - rightScore[1] || problemOrder;
+            return compareSortValues(leftScore[1], rightScore[1], isValidAcTime, problemOrder);
         }
 
         if (isImported) {
@@ -37,6 +52,6 @@ export function sortTeamProblems(problemStates, teamScores = {}, { isImported = 
             return leftScore === undefined ? 1 : -1;
         }
 
-        return leftScore[2] - rightScore[2] || problemOrder;
+        return compareSortValues(leftScore[2], rightScore[2], isValidSubmissionId, problemOrder);
     });
 }

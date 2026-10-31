@@ -9,6 +9,14 @@ export function isProblemSolved(problemScore) {
     return score === maxScore || score === 97;
 }
 
+export function isValidAcTime(time) {
+    return Number.isFinite(time) && time >= 0;
+}
+
+export function isValidSubmissionId(submissionId) {
+    return Number.isSafeInteger(submissionId) && submissionId > 0;
+}
+
 export function getProblemStates(standingsData, { need = null } = {}) {
     if (need !== null && (!Number.isSafeInteger(need) || need <= 0)) {
         throw new RangeError("need 必须为正整数或 null");
