@@ -38,3 +38,7 @@ npm run build
 
 - 本仓库是一个 Tampermonkey 脚本，需要自行安装 Tampermonkey
 - 此脚本仅修改前端页面显示，不会向服务器回传任何数据
+
+## 开源协议
+
+本项目采用 [MIT License](LICENSE) 开源协议。
