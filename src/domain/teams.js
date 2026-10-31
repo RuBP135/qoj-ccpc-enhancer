@@ -12,8 +12,8 @@ export function sortTeamProblems(problemStates, teamScores = {}, { isImported = 
             return problemOrder;
         }
 
-        const leftScore = teamScores[left.index];
-        const rightScore = teamScores[right.index];
+        const leftScore = teamScores?.[left.index] ?? undefined;
+        const rightScore = teamScores?.[right.index] ?? undefined;
         const leftSolved = isProblemSolved(leftScore);
         const rightSolved = isProblemSolved(rightScore);
 

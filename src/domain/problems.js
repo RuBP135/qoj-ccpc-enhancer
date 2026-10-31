@@ -1,12 +1,16 @@
 export function isProblemSolved(problemScore) {
-    return (
-        problemScore !== undefined &&
-        (problemScore[0] === problemScore[4] || problemScore[0] === 97)
-    );
+    const score = problemScore?.[0];
+    const maxScore = problemScore?.[4];
+
+    if (!Number.isFinite(score) || !Number.isFinite(maxScore)) {
+        return false;
+    }
+
+    return score === maxScore || score === 97;
 }
 
 export function getProblemStates(standingsData, { need = null, isFrozen = false } = {}) {
-    if (need !== null && (!Number.isInteger(need) || need <= 0)) {
+    if (need !== null && (!Number.isSafeInteger(need) || need <= 0)) {
         throw new RangeError("need 必须为正整数或 null");
     }
 
