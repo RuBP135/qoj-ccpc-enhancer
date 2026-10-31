@@ -28,3 +28,18 @@ export function getProblemStates(standingsData, { need = null, isFrozen = false 
         };
     });
 }
+
+export function sortHeaderProblems(problemStates) {
+    return [...problemStates].sort((left, right) => {
+        if (left.revealed !== right.revealed) {
+            return left.revealed ? -1 : 1;
+        }
+
+        if (!left.revealed && left.passedCount !== right.passedCount) {
+            return left.passedCount - right.passedCount;
+        }
+
+        // index 对应 QOJ 原榜的题号顺序。
+        return left.index - right.index;
+    });
+}
