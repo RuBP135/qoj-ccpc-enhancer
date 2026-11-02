@@ -6,6 +6,7 @@ import {
     sortHeaderProblems,
 } from "../domain/problems.js";
 import { sortTeamProblems } from "../domain/teams.js";
+import { updateUnrevealedNotice } from "./standings-notice.js";
 
 function escapeHtml(value) {
     const entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
@@ -209,4 +210,6 @@ export function renderCcpcStandings(contestPage, standingsData, settings) {
         page_len: 100,
         print_after_table: () => `<div class="text-right text-muted">${escapeHtml(window.uojLocale("contests::n participants", rows.length))}</div>`,
     });
+
+    updateUnrevealedNotice(context.revealedProblemCount < problemStates.length);
 }

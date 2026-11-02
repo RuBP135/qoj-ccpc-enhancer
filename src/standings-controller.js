@@ -1,6 +1,7 @@
 import { getContestPhase } from "./data/phase.js";
 import { getStandingsData } from "./data/standings.js";
 import { renderCcpcStandings } from "./ui/standings-table.js";
+import { removeUnrevealedNotice } from "./ui/standings-notice.js";
 
 export function createStandingsController(contestPage, initialSettings) {
     if (document.querySelector("#standings") === null || typeof window.showStandings !== "function") {
@@ -19,6 +20,8 @@ export function createStandingsController(contestPage, initialSettings) {
             applied = false;
         } catch (error) {
             console.error("[QOJ CCPC Enhancer] 恢复原榜失败", error);
+        } finally {
+            removeUnrevealedNotice();
         }
     }
 
