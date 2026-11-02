@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         QOJ CCPC Enhancer
 // @namespace    https://github.com/RuBP135/qoj-ccpc-enhancer
-// @version      0.1.1
+// @version      0.2.0
 // @author       RuBP135
 // @supportURL   https://github.com/RuBP135/qoj-ccpc-enhancer/issues
 // @license      MIT
