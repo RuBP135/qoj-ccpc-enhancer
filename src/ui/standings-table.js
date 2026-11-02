@@ -50,7 +50,7 @@ function getProblemBorderStyle(columnIndex, context) {
     if (columnIndex > context.revealedProblemCount) {
         borderStyles.push("border-left:0;");
     } else if (context.revealedProblemCount > 0) {
-        borderStyles.push("border-left:3px solid #6c757d;");
+        borderStyles.push("border-left:2px solid #6c757d;");
     }
 
     if (columnIndex < context.problems.length - 1) {
