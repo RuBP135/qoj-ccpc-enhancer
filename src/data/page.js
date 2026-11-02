@@ -16,10 +16,16 @@ export function getContestPageContext() {
     return { id, kind };
 }
 
-export function isSupportedStandingsPage(contestPage) {
+export function isStandingsPage(contestPage) {
     return (
         contestPage.kind === "standings" &&
-        /^\/contest\/\d+\/standings\/?$/.test(window.location.pathname) &&
+        /^\/contest\/\d+\/standings\/?$/.test(window.location.pathname)
+    );
+}
+
+export function isSupportedStandingsPage(contestPage) {
+    return (
+        isStandingsPage(contestPage) &&
         window.contest_type === "ICPC" &&
         window.icpc_partial_scores === false
     );
