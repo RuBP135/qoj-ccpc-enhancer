@@ -41,9 +41,23 @@ function getProblemStatistics(standingsData, problemStates) {
 }
 
 function getProblemBorderStyle(columnIndex, context) {
-    return context.revealedProblemCount > 0 && columnIndex === context.revealedProblemCount
-        ? "border-left:3px solid #6c757d;"
-        : "";
+    if (columnIndex < context.revealedProblemCount) {
+        return "";
+    }
+
+    const borderStyles = [];
+
+    if (columnIndex > context.revealedProblemCount) {
+        borderStyles.push("border-left:0;");
+    } else if (context.revealedProblemCount > 0) {
+        borderStyles.push("border-left:3px solid #6c757d;");
+    }
+
+    if (columnIndex < context.problems.length - 1) {
+        borderStyles.push("border-right:0;");
+    }
+
+    return borderStyles.join("");
 }
 
 function renderHeader(problemStates, context) {
