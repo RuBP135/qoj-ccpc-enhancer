@@ -40,8 +40,14 @@ function getProblemStatistics(standingsData, problemStates) {
     return statistics;
 }
 
+function getProblemBorderStyle(columnIndex, context) {
+    return context.revealedProblemCount > 0 && columnIndex === context.revealedProblemCount
+        ? "border-left:3px solid #6c757d;"
+        : "";
+}
+
 function renderHeader(problemStates, context) {
-    const problemHeaders = sortHeaderProblems(problemStates).map((problem) => {
+    const problemHeaders = sortHeaderProblems(problemStates).map((problem, columnIndex) => {
         const label = escapeHtml(problem.revealed ? problem.label : "?");
         const linkAllowed = problem.revealed && !(context.external && !context.finalized);
         const heading = linkAllowed
@@ -50,7 +56,7 @@ function renderHeader(problemStates, context) {
         const status = problem.passedCount > 0 ? "success" : "danger";
         const attemptedCount = context.statistics[problem.index].attemptedCount;
 
-        return `<th class="table-${status}" style="width:5em"><div>${heading}</div><div style="font-size:75%">${problem.passedCount}/${attemptedCount}</div></th>`;
+        return `<th class="table-${status}" style="width:5em;${getProblemBorderStyle(columnIndex, context)}"><div>${heading}</div><div style="font-size:75%">${problem.passedCount}/${attemptedCount}</div></th>`;
     }).join("");
 
     return `<tr><th style="width:3em">#</th><th style="width:${context.external ? 60 : 15}em">${escapeHtml(window.uojLocale("username"))}</th>${context.showMedals ? '<th style="width:4em">Medal</th>' : ""}<th style="width:4em">${escapeHtml(window.uojLocale("contests::total score"))}</th>${problemHeaders}</tr>`;
@@ -75,23 +81,26 @@ function renderTeamName(team) {
     return escapeHtml(nickname);
 }
 
-function renderProblemCell(problem, record, context, isImported) {
+function renderProblemCell(problem, record, context, isImported, columnIndex) {
+    const borderStyle = getProblemBorderStyle(columnIndex, context);
+    const cellStyle = borderStyle === "" ? "" : ` style="${borderStyle}"`;
+
     if (record === undefined || record === null) {
-        return "<td></td>";
+        return `<td${cellStyle}></td>`;
     }
 
     if (!Number.isSafeInteger(record[3]) || record[3] < 0) {
-        return "<td>N/A</td>";
+        return `<td${cellStyle}>N/A</td>`;
     }
 
     const solved = isProblemSolved(record);
 
     if (solved && !isValidAcTime(record[1])) {
-        return "<td>N/A</td>";
+        return `<td${cellStyle}>N/A</td>`;
     }
 
     if (!solved && !isImported && !isValidSubmissionId(record[2])) {
-        return "<td>N/A</td>";
+        return `<td${cellStyle}>N/A</td>`;
     }
 
     const statistic = context.statistics[problem.index];
@@ -123,7 +132,7 @@ function renderProblemCell(problem, record, context, isImported) {
         (context.version < 2 || (solved && !unknown));
     const time = showTime ? `<div>${escapeHtml(window.getPenaltyTimeStr(record[1]))}</div>` : "";
 
-    return `<td${cellClass}><div>${score}</div>${time}</td>`;
+    return `<td${cellClass}${cellStyle}><div>${score}</div>${time}</td>`;
 }
 
 function renderTeamRow(row, problemStates, context) {
@@ -140,8 +149,8 @@ function renderTeamRow(row, problemStates, context) {
         : "";
     const color = window.getColOfScore(acceptedCount / Math.max(problemStates.length, 1), 1);
     const total = `<td><div><span class="uoj-score" data-max="${problemStates.length}" style="color:${escapeHtml(color)}">${acceptedCount}</span></div><div>${escapeHtml(window.getPenaltyTimeStr(row[1]))}</div></td>`;
-    const cells = orderedProblems.map((problem) =>
-        renderProblemCell(problem, scores[problem.index], context, isImported),
+    const cells = orderedProblems.map((problem, columnIndex) =>
+        renderProblemCell(problem, scores[problem.index], context, isImported, columnIndex),
     ).join("");
 
     return `<tr${rowClass}><td>${escapeHtml(row[3])}</td><td>${renderTeamName(team)}</td>${medal}${total}${cells}</tr>`;
@@ -170,6 +179,7 @@ export function renderCcpcStandings(contestPage, standingsData, settings) {
         ...standingsData,
         id: contestPage.id,
         statistics: getProblemStatistics(standingsData, problemStates),
+        revealedProblemCount: problemStates.filter((problem) => problem.revealed).length,
     };
     const header = renderHeader(problemStates, context);
     const rows = standingsData.standings.map((row) => renderTeamRow(row, problemStates, context));
