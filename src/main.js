@@ -1,5 +1,5 @@
 import { getContestPageContext, isStandingsPage, isSupportedStandingsPage } from "./data/page.js";
-import { loadContestSettings, saveContestSettings } from "./settings.js";
+import { loadContestSettings, loadSettingsEditorState, saveSettingsEditorState } from "./settings.js";
 import { createStandingsController } from "./standings-controller.js";
 import { mountSettingsButton } from "./ui/settings-button.js";
 import { createSettingsDialog } from "./ui/settings-dialog.js";
@@ -30,13 +30,13 @@ if (contestPage !== null) {
             if (settingsButton !== null) {
                 const settingsDialog = createSettingsDialog({
                     onSave(updatedSettings) {
-                        saveContestSettings(contestPage.id, updatedSettings);
-                        standingsController?.updateSettings(updatedSettings);
+                        const settings = saveSettingsEditorState(contestPage.id, updatedSettings);
+                        standingsController?.updateSettings(settings);
                     },
                 });
 
                 settingsButton.addEventListener("click", () => {
-                    settingsDialog.open(loadContestSettings(contestPage.id));
+                    settingsDialog.open(loadSettingsEditorState(contestPage.id));
                 });
 
                 console.info(`[QOJ CCPC Enhancer] 已初始化比赛 ${contestPage.id}`);

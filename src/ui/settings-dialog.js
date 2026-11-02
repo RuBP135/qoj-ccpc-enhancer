@@ -41,6 +41,71 @@ const dialogStyles = `
     font-size: 0.875rem;
 }
 
+.qoj-ccpc-settings-dialog .qoj-ccpc-settings-selection {
+    margin-bottom: 1.5rem;
+}
+
+.qoj-ccpc-settings-dialog .qoj-ccpc-settings-source-title {
+    margin-bottom: 0.5rem;
+    color: #57606a;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.qoj-ccpc-settings-dialog .qoj-ccpc-settings-source {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: hidden;
+    border: 1px solid #b9c1cb;
+    border-radius: 0.4rem;
+    background: #f7f8fa;
+}
+
+.qoj-ccpc-settings-dialog .qoj-ccpc-settings-source > label {
+    position: relative;
+    display: block;
+    min-width: 0;
+}
+
+.qoj-ccpc-settings-dialog .qoj-ccpc-settings-source > label + label {
+    border-left: 1px solid #b9c1cb;
+}
+
+.qoj-ccpc-settings-dialog .qoj-ccpc-settings-source input[type="radio"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+}
+
+.qoj-ccpc-settings-dialog .qoj-ccpc-settings-source span {
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    min-height: 2.5rem;
+    height: 100%;
+    padding: 0.5rem;
+    color: #57606a;
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.qoj-ccpc-settings-dialog .qoj-ccpc-settings-source label:hover span {
+    background: #e9edf5;
+}
+
+.qoj-ccpc-settings-dialog .qoj-ccpc-settings-source input:checked + span {
+    background: #4472ff;
+    color: #fff;
+    font-weight: 600;
+}
+
+.qoj-ccpc-settings-dialog .qoj-ccpc-settings-source input:focus-visible + span {
+    outline: 2px solid #1f2937;
+    outline-offset: -3px;
+}
+
 .qoj-ccpc-settings-dialog label {
     display: inline-flex;
     align-items: center;
@@ -129,6 +194,23 @@ const dialogStyles = `
 }
 `;
 
+function createSettingsDraft(settings) {
+    return {
+        enabled: settings.enabled,
+        needEnabled: settings.need !== null,
+        needValue: String(settings.need ?? suggestedNeed),
+        percentageEnabled: settings.percentage !== null,
+        percentageValue: String(settings.percentage ?? defaultRevealPercentage),
+    };
+}
+
+function settingsMatch(left, right) {
+    return right !== null &&
+        left.enabled === right.enabled &&
+        left.need === right.need &&
+        left.percentage === right.percentage;
+}
+
 export function createSettingsDialog({ onSave }) {
     const dialog = document.createElement("dialog");
     dialog.id = "qoj-ccpc-settings-dialog";
@@ -138,7 +220,20 @@ export function createSettingsDialog({ onSave }) {
     dialog.innerHTML = `
         <form novalidate>
             <h2 id="qoj-ccpc-settings-title">CCPC 新赛制榜单显示设置</h2>
-            <p id="qoj-ccpc-settings-scope" class="qoj-ccpc-settings-scope">仅对当前比赛生效（仅适用于 ICPC 赛制）。</p>
+            <p id="qoj-ccpc-settings-scope" class="qoj-ccpc-settings-scope">仅适用于 ICPC 赛制。</p>
+            <div class="qoj-ccpc-settings-selection">
+                <div id="qoj-ccpc-settings-source-title" class="qoj-ccpc-settings-source-title">当前比赛采用</div>
+                <div class="qoj-ccpc-settings-source" role="group" aria-labelledby="qoj-ccpc-settings-source-title">
+                    <label>
+                        <input type="radio" name="settingsSource" value="global">
+                        <span>全局设置</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="settingsSource" value="contest">
+                        <span>专用设置</span>
+                    </label>
+                </div>
+            </div>
             <label>
                 <input type="checkbox" name="enabled">
                 启用 CCPC 新赛制榜单
@@ -188,6 +283,8 @@ export function createSettingsDialog({ onSave }) {
     document.body.append(dialog);
 
     const form = dialog.querySelector("form");
+    const globalSourceOption = form.querySelector('[name="settingsSource"][value="global"]');
+    const contestSourceOption = form.querySelector('[name="settingsSource"][value="contest"]');
     const enabledInput = form.querySelector('[name="enabled"]');
     const disabledOption = form.querySelector('[name="needMode"][value="disabled"]');
     const customOption = form.querySelector('[name="needMode"][value="custom"]');
@@ -196,6 +293,10 @@ export function createSettingsDialog({ onSave }) {
     const percentageCustomOption = form.querySelector('[name="percentageMode"][value="custom"]');
     const percentageInput = form.querySelector('[name="percentageValue"]');
     const errorMessage = form.querySelector('[role="alert"]');
+
+    let activeSource = "global";
+    let drafts = null;
+    let initialSettings = null;
 
     function clearError() {
         errorMessage.hidden = true;
@@ -214,6 +315,82 @@ export function createSettingsDialog({ onSave }) {
         clearError();
     }
 
+    function readInputs() {
+        return {
+            enabled: enabledInput.checked,
+            needEnabled: customOption.checked,
+            needValue: needInput.value,
+            percentageEnabled: percentageCustomOption.checked,
+            percentageValue: percentageInput.value,
+        };
+    }
+
+    function renderDraft() {
+        const draft = drafts[activeSource];
+        globalSourceOption.checked = activeSource === "global";
+        contestSourceOption.checked = activeSource === "contest";
+        enabledInput.checked = draft.enabled;
+        disabledOption.checked = !draft.needEnabled;
+        customOption.checked = draft.needEnabled;
+        needInput.value = draft.needValue;
+        percentageDisabledOption.checked = !draft.percentageEnabled;
+        percentageCustomOption.checked = draft.percentageEnabled;
+        percentageInput.value = draft.percentageValue;
+        updateNeedInput();
+        updatePercentageInput();
+    }
+
+    function switchSource(source) {
+        drafts[activeSource] = readInputs();
+
+        if (drafts[source] === null) {
+            drafts[source] = { ...drafts.global };
+        }
+
+        activeSource = source;
+        renderDraft();
+    }
+
+    function showDraftError(source, input, message) {
+        activeSource = source;
+        renderDraft();
+        errorMessage.textContent = message;
+        errorMessage.hidden = false;
+        input.setAttribute("aria-invalid", "true");
+        input.focus();
+    }
+
+    function parseDraft(source) {
+        const draft = drafts[source];
+        const needText = draft.needValue.trim();
+        const need = draft.needEnabled ? Number(needText) : null;
+        const percentageText = draft.percentageValue.trim();
+        const percentage = draft.percentageEnabled ? Number(percentageText) : null;
+
+        if (draft.needEnabled && (!/^\d+$/.test(needText) || !Number.isSafeInteger(need) || need <= 0)) {
+            showDraftError(source, needInput, "请输入有效的正整数。");
+            return null;
+        }
+
+        if (draft.percentageEnabled &&
+            (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(percentageText) || !isValidRevealPercentage(percentage))) {
+            showDraftError(source, percentageInput, "请输入大于 0 且不超过 100 的整数/小数");
+            return null;
+        }
+
+        return { enabled: draft.enabled, need, percentage };
+    }
+
+    globalSourceOption.addEventListener("change", () => {
+        if (globalSourceOption.checked) {
+            switchSource("global");
+        }
+    });
+    contestSourceOption.addEventListener("change", () => {
+        if (contestSourceOption.checked) {
+            switchSource("contest");
+        }
+    });
     disabledOption.addEventListener("change", updateNeedInput);
     customOption.addEventListener("change", updateNeedInput);
     percentageDisabledOption.addEventListener("change", updatePercentageInput);
@@ -225,33 +402,30 @@ export function createSettingsDialog({ onSave }) {
     form.addEventListener("submit", (event) => {
         event.preventDefault();
         clearError();
+        drafts[activeSource] = readInputs();
+        const updatedSettings = { source: activeSource };
 
-        const text = needInput.value.trim();
-        const need = customOption.checked ? Number(text) : null;
-        const percentageText = percentageInput.value.trim();
-        const percentage = percentageCustomOption.checked ? Number(percentageText) : null;
+        for (const source of ["global", "contest"]) {
+            if (drafts[source] === null) {
+                continue;
+            }
 
-        if (customOption.checked && (!/^\d+$/.test(text) || !Number.isSafeInteger(need) || need <= 0)) {
-            errorMessage.textContent = "请输入有效的正整数。";
-            errorMessage.hidden = false;
-            needInput.setAttribute("aria-invalid", "true");
-            needInput.focus();
-            return;
-        }
+            const settings = parseDraft(source);
 
-        if (percentageCustomOption.checked &&
-            (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(percentageText) || !isValidRevealPercentage(percentage))) {
-            errorMessage.textContent = "请输入大于 0 且不超过 100 的整数/小数";
-            errorMessage.hidden = false;
-            percentageInput.setAttribute("aria-invalid", "true");
-            percentageInput.focus();
-            return;
+            if (settings === null) {
+                return;
+            }
+
+            if (!settingsMatch(settings, initialSettings[source])) {
+                const key = source === "global" ? "globalSettings" : "contestSettings";
+                updatedSettings[key] = settings;
+            }
         }
 
         try {
-            onSave({ enabled: enabledInput.checked, need, percentage });
+            onSave(updatedSettings);
         } catch (error) {
-            console.error("[QOJ CCPC Enhancer] 保存比赛设置失败", error);
+            console.error("[QOJ CCPC Enhancer] 保存设置失败", error);
             errorMessage.textContent = "保存失败，请重试。";
             errorMessage.hidden = false;
             return;
@@ -266,15 +440,21 @@ export function createSettingsDialog({ onSave }) {
                 return;
             }
 
-            enabledInput.checked = settings.enabled;
-            disabledOption.checked = settings.need === null;
-            customOption.checked = settings.need !== null;
-            needInput.value = String(settings.need ?? suggestedNeed);
-            percentageDisabledOption.checked = settings.percentage === null;
-            percentageCustomOption.checked = settings.percentage !== null;
-            percentageInput.value = String(settings.percentage ?? defaultRevealPercentage);
-            updateNeedInput();
-            updatePercentageInput();
+            initialSettings = {
+                global: { ...settings.globalSettings },
+                contest: settings.contestSettings === null ? null : { ...settings.contestSettings },
+            };
+            drafts = {
+                global: createSettingsDraft(initialSettings.global),
+                contest: initialSettings.contest === null ? null : createSettingsDraft(initialSettings.contest),
+            };
+            activeSource = settings.source === "contest" ? "contest" : "global";
+
+            if (drafts[activeSource] === null) {
+                drafts[activeSource] = { ...drafts.global };
+            }
+
+            renderDraft();
             dialog.showModal();
         },
     };
