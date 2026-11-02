@@ -1,3 +1,5 @@
+import { defaultRevealPercentage, isValidRevealPercentage } from "./domain/problems.js";
+
 function getSettingsKey(id) {
     return `qoj-ccpc-enhancer:contest:${id}`;
 }
@@ -5,10 +7,13 @@ function getSettingsKey(id) {
 function normalizeSettings(settings) {
     const need = settings?.need;
     const validNeed = need === null || (Number.isSafeInteger(need) && need > 0);
+    const percentage = settings?.percentage;
+    const validPercentage = percentage === null || isValidRevealPercentage(percentage);
 
     return {
         enabled: settings?.enabled === true,
         need: validNeed ? need : null,
+        percentage: validPercentage ? percentage : defaultRevealPercentage,
     };
 }
 

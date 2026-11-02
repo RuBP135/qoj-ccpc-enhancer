@@ -1,3 +1,5 @@
+import { defaultRevealPercentage, isValidRevealPercentage } from "../domain/problems.js";
+
 const suggestedNeed = 50;
 
 const dialogStyles = `
@@ -66,7 +68,7 @@ const dialogStyles = `
     font-weight: 600;
 }
 
-.qoj-ccpc-settings-dialog .qoj-ccpc-need-row {
+.qoj-ccpc-settings-dialog .qoj-ccpc-condition-row {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -85,13 +87,6 @@ const dialogStyles = `
 .qoj-ccpc-settings-dialog input:disabled {
     background: #f1f3f5;
     color: #68717d;
-}
-
-.qoj-ccpc-settings-dialog .qoj-ccpc-settings-help {
-    margin: 0.75rem 0 0;
-    color: #68717d;
-    font-size: 0.875rem;
-    line-height: 1.6;
 }
 
 .qoj-ccpc-settings-dialog .qoj-ccpc-settings-error {
@@ -142,8 +137,8 @@ export function createSettingsDialog({ onSave }) {
     dialog.setAttribute("aria-describedby", "qoj-ccpc-settings-scope");
     dialog.innerHTML = `
         <form novalidate>
-            <h2 id="qoj-ccpc-settings-title">CCPC 设置</h2>
-            <p id="qoj-ccpc-settings-scope" class="qoj-ccpc-settings-scope">仅对当前比赛生效。</p>
+            <h2 id="qoj-ccpc-settings-title">CCPC 新赛制榜单显示设置</h2>
+            <p id="qoj-ccpc-settings-scope" class="qoj-ccpc-settings-scope">仅对当前比赛生效（仅适用于 ICPC 赛制）。</p>
             <label>
                 <input type="checkbox" name="enabled">
                 启用 CCPC 新赛制榜单
@@ -154,17 +149,30 @@ export function createSettingsDialog({ onSave }) {
                     <input type="radio" name="needMode" value="disabled">
                     不启用
                 </label>
-                <div class="qoj-ccpc-need-row">
+                <div class="qoj-ccpc-condition-row">
                     <label>
                         <input type="radio" name="needMode" value="custom">
                         启用，人数：
                     </label>
                     <input type="text" name="needValue" inputmode="numeric" autocomplete="off"
-                        aria-label="固定过题人数" aria-describedby="qoj-ccpc-need-help">
+                        aria-label="固定过题人数">
                 </div>
-                <p id="qoj-ccpc-need-help" class="qoj-ccpc-settings-help">
-                    过题队伍数达到参赛队伍总数的五分之一（向下取整）时，仍会揭示题号。
-                </p>
+            </fieldset>
+            <fieldset>
+                <legend>百分比揭示条件</legend>
+                <label>
+                    <input type="radio" name="percentageMode" value="disabled">
+                    不启用
+                </label>
+                <div class="qoj-ccpc-condition-row">
+                    <label>
+                        <input type="radio" name="percentageMode" value="custom">
+                        启用，比例：
+                    </label>
+                    <input type="text" name="percentageValue" inputmode="decimal" autocomplete="off"
+                        aria-label="过题队伍比例（百分比）">
+                    <span aria-hidden="true">%</span>
+                </div>
             </fieldset>
             <p class="qoj-ccpc-settings-error" role="alert" hidden></p>
             <footer>
@@ -184,12 +192,16 @@ export function createSettingsDialog({ onSave }) {
     const disabledOption = form.querySelector('[name="needMode"][value="disabled"]');
     const customOption = form.querySelector('[name="needMode"][value="custom"]');
     const needInput = form.querySelector('[name="needValue"]');
+    const percentageDisabledOption = form.querySelector('[name="percentageMode"][value="disabled"]');
+    const percentageCustomOption = form.querySelector('[name="percentageMode"][value="custom"]');
+    const percentageInput = form.querySelector('[name="percentageValue"]');
     const errorMessage = form.querySelector('[role="alert"]');
 
     function clearError() {
         errorMessage.hidden = true;
         errorMessage.textContent = "";
         needInput.removeAttribute("aria-invalid");
+        percentageInput.removeAttribute("aria-invalid");
     }
 
     function updateNeedInput() {
@@ -197,8 +209,15 @@ export function createSettingsDialog({ onSave }) {
         clearError();
     }
 
+    function updatePercentageInput() {
+        percentageInput.disabled = !percentageCustomOption.checked;
+        clearError();
+    }
+
     disabledOption.addEventListener("change", updateNeedInput);
     customOption.addEventListener("change", updateNeedInput);
+    percentageDisabledOption.addEventListener("change", updatePercentageInput);
+    percentageCustomOption.addEventListener("change", updatePercentageInput);
     form.querySelector('[data-action="cancel"]').addEventListener("click", () => {
         dialog.close();
     });
@@ -209,6 +228,8 @@ export function createSettingsDialog({ onSave }) {
 
         const text = needInput.value.trim();
         const need = customOption.checked ? Number(text) : null;
+        const percentageText = percentageInput.value.trim();
+        const percentage = percentageCustomOption.checked ? Number(percentageText) : null;
 
         if (customOption.checked && (!/^\d+$/.test(text) || !Number.isSafeInteger(need) || need <= 0)) {
             errorMessage.textContent = "请输入有效的正整数。";
@@ -218,8 +239,17 @@ export function createSettingsDialog({ onSave }) {
             return;
         }
 
+        if (percentageCustomOption.checked &&
+            (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(percentageText) || !isValidRevealPercentage(percentage))) {
+            errorMessage.textContent = "请输入大于 0 且不超过 100 的整数/小数";
+            errorMessage.hidden = false;
+            percentageInput.setAttribute("aria-invalid", "true");
+            percentageInput.focus();
+            return;
+        }
+
         try {
-            onSave({ enabled: enabledInput.checked, need });
+            onSave({ enabled: enabledInput.checked, need, percentage });
         } catch (error) {
             console.error("[QOJ CCPC Enhancer] 保存比赛设置失败", error);
             errorMessage.textContent = "保存失败，请重试。";
@@ -240,7 +270,11 @@ export function createSettingsDialog({ onSave }) {
             disabledOption.checked = settings.need === null;
             customOption.checked = settings.need !== null;
             needInput.value = String(settings.need ?? suggestedNeed);
+            percentageDisabledOption.checked = settings.percentage === null;
+            percentageCustomOption.checked = settings.percentage !== null;
+            percentageInput.value = String(settings.percentage ?? defaultRevealPercentage);
             updateNeedInput();
+            updatePercentageInput();
             dialog.showModal();
         },
     };

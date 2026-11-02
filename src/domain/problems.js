@@ -17,13 +17,23 @@ export function isValidSubmissionId(submissionId) {
     return Number.isSafeInteger(submissionId) && submissionId > 0;
 }
 
-export function getProblemStates(standingsData, { need = null } = {}) {
+export const defaultRevealPercentage = 20;
+
+export function isValidRevealPercentage(percentage) {
+    return Number.isFinite(percentage) && percentage > 0 && percentage <= 100;
+}
+
+export function getProblemStates(standingsData, { need = null, percentage = defaultRevealPercentage } = {}) {
     if (need !== null && (!Number.isSafeInteger(need) || need <= 0)) {
         throw new RangeError("need 必须为正整数或 null");
     }
 
+    if (percentage !== null && !isValidRevealPercentage(percentage)) {
+        throw new RangeError("percentage 必须为大于 0 且不超过 100 的数字或 null");
+    }
+
     const { standings, score, problems, problemLabels } = standingsData;
-    const ratioThreshold = Math.floor(standings.length / 5);
+    const ratioThreshold = percentage === null ? null : Math.floor(standings.length * percentage / 100);
 
     return problems.map((id, index) => {
         const passedCount = standings.reduce((count, row) => {
@@ -38,7 +48,7 @@ export function getProblemStates(standingsData, { need = null } = {}) {
             passedCount,
             revealed:
                 (need !== null && passedCount >= need) ||
-                passedCount >= ratioThreshold,
+                (percentage !== null && passedCount >= ratioThreshold),
         };
     });
 }

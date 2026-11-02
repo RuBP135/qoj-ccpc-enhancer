@@ -174,7 +174,10 @@ export function renderCcpcStandings(contestPage, standingsData, settings) {
         throw new Error("QOJ 榜单容器不存在");
     }
 
-    const problemStates = getProblemStates(standingsData, { need: settings.need });
+    const problemStates = getProblemStates(standingsData, {
+        need: settings.need,
+        percentage: settings.percentage,
+    });
     const context = {
         ...standingsData,
         id: contestPage.id,
